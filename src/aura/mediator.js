@@ -1,6 +1,3 @@
-/*jshint nomen:true, sloppy:true, browser:true*/
-/*global define, require, console*/
-
 // ## Core
 // Implements the mediator pattern and
 // encapsulates the core functionality for this application.

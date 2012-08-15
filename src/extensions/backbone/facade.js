@@ -1,5 +1,3 @@
-/* global define */
-
 // ## Sandbox Extension
 // @fileOverview Extend the aura-core facade
 // @todo This is a stupid place to include jquery ui
