@@ -291,7 +291,7 @@ As of Aura 0.8.1 (edge) we have separated out the architecture part of the proje
 
 Aura leaves the decision on JS vendor libraries up to you. There is no hard dependency on Backbone, while there is a plug-in to support it. You could use frameworks like Marionette inside of Aura if you chose to.
 
-Backbone.Marionette provides a set of prefabricated Backbone.js views to handle common display scenarios. The Views Marionette provides also helps with handling garbage collection, namely eliminating zombie views caused by undeleted references. Marionette View's also include its own event library built on top of Backbone.Events, that is also able to bind to non-`Backbone.View` objects and support for separating applications into modules. Marionette has a hard dependency on Backbone.js.
+[Backbone.Marionette](https://github.com/marionettejs/backbone.marionette) provides a set of prefabricated Backbone.js views to handle common display scenarios. These views help with handling garbage collection by eliminating zombie views caused by undeleted references. It augments Backbone.Events into its own [EventAggregator](https://github.com/marionettejs/backbone.marionette/blob/master/docs/marionette.eventaggregator.md). It includes optional support for [separating applications into modules](https://github.com/marionettejs/backbone.marionette/blob/master/docs/marionette.application.module.md). Marionette has a hard dependency on Backbone.js.
 
 **Q: How do you share a collection using Aura? e.g If I have a collection using many widgets, how do I correctly share this collection?**
 
