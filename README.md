@@ -37,10 +37,10 @@ Powered by the Facade pattern, the Sandbox:
 
  ### Widgets
 
-* Widgets represent a complete *unit* of a page. They could be a calendar, a news block, a todo list or anything else.
-* **In Backbone.js terms, widgets are composed of Models, Views, Collections and Routers as well as any templates needed for the widget to rendered.**
-* Widgets should be developed such that any number of instances of them could exist on a page in harmony.
-* **Publish/Subscribe can be used to communicate between widgets**. Alternatively, direct communication (as demonstrated by the `controls` widget in our examples) may be, however this is discouraged where Pub/Sub can be used instead.
+  * Widgets represent a complete *unit* of a page. They could be a calendar, a news block, a todo list or anything else.
+  * **In Backbone.js terms, widgets are composed of Models, Views, Collections and Routers as well as any templates needed for the widget to rendered.**
+  * Widgets should be developed such that any number of instances of them could exist on a page in harmony.
+  * **Publish/Subscribe can be used to communicate between widgets**. Alternatively, direct communication (as demonstrated by the `controls` widget in our examples) may be, however this is discouraged where Pub/Sub can be used instead.
 
 ## Sample Application
 
@@ -277,9 +277,9 @@ somewhere in the project directory.
 
 **Q: Can you describe Aura’s architectural philosophy?**
 
-Aura’s design philosophy is predicated on the separation of components of js applications into separate pieces called modules. Initialization of modules can be controlled through a central interface. Communication between module is triggered through publishing and subscribing to interesting events.
+Aura’s design philosophy is predicated on the componentization of JS applications into separate pieces called modules. Initialization of modules can be controlled through a central interface. Communication between module can be triggered through publishing and subscribing to interesting events.
 
-An example: A module for a calendar would be interested that there is a new entry on a to do list. However, by themselves, a calendar or a task list could work alone. Since it is a matter of simply sending signals, a module could be stopped at run time without breaking the application, they were never required dependencies of each other, instead they shared commonality of dealing with the same type of data (schedule information) and purpose (this todo list is meant to synchronize with a calendar). Indeed, a second to do list could be instantiated that doesn’t talk to the calendar.
+An example: A module for a calendar would be interested that there is a new entry on a to do list. However, by themselves, a calendar or a task list could work alone. Since it is a matter of simply sending signals, a module could be stopped at run time without breaking the application, they were never required dependencies of each other. Instead they shared commonality of 1.) data type (schedule information) and purpose (this todo list is meant to synchronize with the the same data). Indeed, a second to do list could be instantiated that doesn’t talk to the calendar.
 
 Aura’s sandbox should be used where it’s going to offer real benefits to your code architecture. It has a lot more than just that though - as a widget-based library, we also provide utilities for helping you with cross-module and cross-component communication, managing layouts (widgets), permissions and more.
 
@@ -289,9 +289,9 @@ As of Aura 0.8.1 (edge) we have separated out the architecture part of the proje
 
 **Q: If I don’t use Aura on my complex Backbone.js application, what am I missing out on? Can’t I just use Backbone.Marionette or Chaplin?**
 
-Backbone.Marionette provides a set of prefabricated Backbone.js views and collections with support for handling garbage collection and eliminating zombie views caused by undeleted references. Aura at the core level would not be 1.) biased toward backbone.js as a framework or 2.) specifics to handling views.
+Aura leaves the decision on JS vendor libraries up to you. There is no hard dependency on Backbone, while there is a plug-in to support it. You could use frameworks like Marionette inside of Aura if you chose to.
 
-Marionette, however, is comprised of components which are reusable in independently.
+Backbone.Marionette provides a set of prefabricated Backbone.js views to handle common display scenarios. The Views Marionette provides also helps with handling garbage collection, namely eliminating zombie views caused by undeleted references. Marionette View's also include its own event library built on top of Backbone.Events, that is also able to bind to non-`Backbone.View` objects and support for separating applications into modules. Marionette has a hard dependency on Backbone.js.
 
 **Q: How do you share a collection using Aura? e.g If I have a collection using many widgets, how do I correctly share this collection?**
 
