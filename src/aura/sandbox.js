@@ -10,19 +10,41 @@ define(function() {
 
       sandbox.log = function() {
         var args = Array.prototype.concat.apply([channel], arguments);
+
         mediator.log.apply(mediator, args);
       };
 
-      // * **param:** {string} channel Event name
-      // * **param:** {object} callback Module
-      // * **param:** {object} context Callback context
-      sandbox.on = function(fromChannel, callback, context) {
-        mediator.on(fromChannel, channel, callback, context || this);
+      sandbox.log.event = function() {
+        sandbox.log('[event2log] Event from: ' + channel);
+        if (arguments.length) {
+          sandbox.log('Additional data:', arguments);
+        }
       };
 
+      // * **param:** {string} event
+      // * **param:** {object} callback Module
+      // * **param:** {object} context Callback context
+      sandbox.on = function(event, callback, context) {
+        mediator.on(event, channel, callback, context || this);
+        //core.on = function(event, subscriber, callback, context) {
+
+      };
+
+      // sandbox.logEvent can subscribe to events and print them
+      //
+      // * **param:** {string} event
+      // * **param:** {object} context Callback context
+      sandbox.on.log = function(event, context) {
+        mediator.on(event, channel, sandbox.log.event, context || this);
+        //core.on = function(event, subscriber, callback, context) {
+
+      };
+
+
       // * **param:** {string} channel Event name
-      sandbox.emit = function(channel) {
+      sandbox.emit = function() {
         mediator.emit.apply(mediator, arguments);
+        //core.emit = function(event) {
       };
 
       // * **param:** {Object/Array} an array with objects or single object containing channel and element

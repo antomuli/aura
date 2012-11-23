@@ -4,6 +4,10 @@
 // to clear. This enforces a flexible security
 // layer for your application.
 //
+// This module houses the structure of a module's
+// permission. The logic that validates and builds
+// permissions are in the mediator (core.js).
+//
 // {eventName: {moduleName:[true|false]}, ...}
 define(['dom'], function($) {
   'use strict';
@@ -20,12 +24,8 @@ define(['dom'], function($) {
   };
 
   // * **param:** {string} subscriber Module name
-  // * **param:** {string} channel Event name
-  permissions.validate = function(subscriber, channel) {
-    var channelRules = rules[channel] || {};
-    var test = channelRules[subscriber];
-
-    return test === undefined ? false : test;
+  permissions.rules = function(subscriber) {
+    return rules[subscriber];
   };
 
   return permissions;
