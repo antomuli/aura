@@ -9,7 +9,7 @@ if (typeof Object.create !== 'function') {
 
 // Starts main modules
 // Publishing from core because that's the way that Nicholas did it...
-define(['aura_core', 'backboneSandbox'], function(core, backboneSandbox) {
+define(['aura_core', 'perms', 'backboneSandbox'], function(core, permissions, backboneSandbox) {
   'use strict';
 
   core.getSandbox = function (sandbox) {

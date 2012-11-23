@@ -6,10 +6,9 @@ define(['sandbox', './views/app'], function(sandbox, AppView) {
       el: sandbox.dom.find(options.element)
     });
 
-    sandbox.emit('bootstrap', 'todos');
-    sandbox.on('bootstrap', function(from) {
-      sandbox.log('Todos-bootstrap message from: ' + from);
-    });
+    sandbox.emit('bootstrap.todos', 'To Do Initialized.');
+
+    sandbox.on.log('bootstrap.todos');
 
     sandbox.on('set-language', function(lang) {
       sandbox.log('Language set to: ' + lang);

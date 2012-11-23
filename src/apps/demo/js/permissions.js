@@ -5,25 +5,17 @@ define(['aura_perms'], function(permissions) {
 
   permissions.extend({
     todos: {
-      bootstrap: true,
-      'new-event': true,
-      'set-language': true,
-      '*': true
+      emit: ['bootstrap.todos', 'new-event', 'set-language'],
+      on: ['bootstrap.todos', 'new-event', 'set-language']
     },
     calendar: {
-      bootstrap: true,
-      '*': true
+      on: ['bootstrap.calendar', 'route.calendar.**'],
+      emit: ['bootstrap.calendar']
     },
-    controls: {
-      bootstrap: true,
-      '*': true
-    },
+    controls: ['*'], // if emit and on is the same, just enter an array
     router: {
-      bootstrap: true,
-      router: true,
-      calendar: true,
-      todos: true,
-      '*': true
+      emit: ['bootstrap.router', 'calendar.*', 'todos.*', '*', 'route.**'],
+      on: ['bootstrap.router', 'calendar.*', 'todos.*', '*', 'route.**']
     }
   });
 

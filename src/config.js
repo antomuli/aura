@@ -66,6 +66,9 @@ define(function() {
       // Underscore (Lo-Dash - http://lodash.com)
       underscore: '../../../aura/lib/lodash',
 
+      // EventEmitter
+      eventemitter: '../../../aura/lib/eventemitter2',
+
       // Set the base library
       dom: '../../../aura/lib/dom',
 
