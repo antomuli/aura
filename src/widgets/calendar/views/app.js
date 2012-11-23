@@ -18,11 +18,13 @@ define(['sandbox', './event', '../models/event', 'text!../templates/base.html'],
       this.eventView.collection = this.collection;
 
       // subscribe to routing events
-      sandbox.on('calendar', this.calendarController, this);
+      sandbox.on('route', 'calendar.**', this.calendarController, this);
     },
 
     calendarController: function() {
-      var args = arguments;
+      console.log(arguments);
+      var slice = Array.prototype.slice;
+      var args = slice.call(arguments, 1); // strip off 'calendar'
       var action = args[0]; // such as 'changeView'
 
       if (action === 'gotoDate') {
@@ -72,7 +74,7 @@ define(['sandbox', './event', '../models/event', 'text!../templates/base.html'],
 
     addOne: function(event) {
       this.calendar.fullCalendar('renderEvent', event.toJSON());
-      sandbox.emit('new-event', event.toJSON());
+      sandbox.emit('schedule', 'new-event', event.toJSON());
     },
 
     select: function(startDate, endDate) {

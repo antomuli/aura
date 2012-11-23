@@ -5,24 +5,52 @@ define(function() {
   'use strict';
 
   return {
-    create: function(mediator, channel) {
+    create: function(mediator, module) {
       var sandbox = {};
 
       sandbox.log = function() {
-        var args = Array.prototype.concat.apply([channel], arguments);
+        var args = Array.prototype.concat.apply([module], arguments);
+
         mediator.log.apply(mediator, args);
       };
 
-      // * **param:** {string} channel Event name
-      // * **param:** {object} callback Module
-      // * **param:** {object} context Callback context
-      sandbox.on = function(fromChannel, callback, context) {
-        mediator.on(fromChannel, channel, callback, context || this);
+      sandbox.log.event = function() {
+        sandbox.log('[event2log] Event from: ' + module);
+        if (arguments.length) {
+          sandbox.log('Additional data:', arguments);
+        }
       };
 
+      // * **param:** {string} event
+      // * **param:** {object} callback Module
+      // * **param:** {object} context Callback context
+      sandbox.on = function(channel, event, callback, context) {
+        if (arguments.length === 5) {
+
+        }
+
+        mediator.on(channel, event, module, callback, context || this);
+        //core.on = function(event, subscriber, callback, context) {
+
+      };
+
+      // sandbox.logEvent can subscribe to events and print them
+      //
+      // * **param:** {string} event
+      // * **param:** {object} context Callback context
+      sandbox.on.log = function(channel, event, context) {
+        mediator.on(channel, event, module, sandbox.log.event, context || this);
+        //core.on = function(event, subscriber, callback, context) {
+
+      };
+
+
       // * **param:** {string} channel Event name
-      sandbox.emit = function(channel) {
-        mediator.emit.apply(mediator, arguments);
+      sandbox.emit = function(channel, event) {
+
+        var args = [].slice.call(arguments, 2);
+        mediator.emit.apply(mediator, [channel, event, module].concat(args));
+        //core.emit = function(event) {
       };
 
       // * **param:** {Object/Array} an array with objects or single object containing channel and element
@@ -32,7 +60,7 @@ define(function() {
 
       // * **param:** {string} channel Event name
       // * **param:** {string} el Element name
-      sandbox.stop = function(channel, el) {
+      sandbox.stop = function(module, el) {
         mediator.stop.apply(mediator, arguments);
       };
 

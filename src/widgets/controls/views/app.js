@@ -46,14 +46,19 @@ define(['sandbox', 'text!../templates/controls.html'], function(sandbox, control
     },
 
     startTodos: function() {
-      sandbox.widgets.start('todos', { element: '#todoapp' });
+      sandbox.widgets.start({
+        'todos': {
+          element: '#todoapp'
+        }
+      });
     },
 
     startCalendar: function() {
       sandbox.widgets.start({
-        channel: 'calendar',
-        options: {
-          element: '#calendarapp'
+        'calendar': {
+          options: {
+            element: '#calendarapp'
+          }
         }
       });
     },
@@ -64,7 +69,7 @@ define(['sandbox', 'text!../templates/controls.html'], function(sandbox, control
 
     setLanguage: function() {
       // Potentially widgets can listen to this event to re-render themselves without a browser refresh
-      sandbox.emit('set-language', this.$el.find(".language").val());
+      sandbox.emit('locale', 'set-language', this.$el.find(".language").val());
     }
   });
 

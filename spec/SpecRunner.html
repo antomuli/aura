@@ -57,6 +57,9 @@
           // Underscore (Lo-Dash - http://lodash.com)
           underscore: 'src/aura/lib/lodash',
 
+          // EventEmitter
+          eventemitter: 'src/aura/lib/eventemitter2',
+
           // Set the base library
           dom: 'src/aura/lib/dom',
 
@@ -76,6 +79,11 @@
           underscore: 'src/aura/lib/lodash',
           fullcalendar: 'src/extensions/backbone/lib/fullcalendar.min',
           jquery_ui: 'src/extensions/backbone/lib/jquery-ui.min'
+         },
+        config: {
+          'spec/js/mediator_spec': {
+            permissions: false
+          }
         }
     };
     require.config( require.aura );
