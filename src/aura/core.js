@@ -150,7 +150,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     if (!core.hasPermission('on', subscriber, event)) {
       return;
     } else {
-      var pubsub = core.getPubsub(subscriber);
+      var pubsub = core.getPubSub(subscriber);
 
       if (event === "*") { // '*' with no namespace to .onAny
         pubsub.onAny(callback.bind(context));
@@ -184,7 +184,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   //
   // * **param:** {string} subscriber sandbox Module name
   core.loadPermissions = function(subscriber) {
-    var pubsub = core.getPubsub(subscriber);
+    var pubsub = core.getPubSub(subscriber);
     var sandboxPerms = core.getPermissions(subscriber);
     var noopFunction = function(){};
     var rules, rule, i;
@@ -215,7 +215,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   // * **param:** {string} subscriber Module name
   // * **param:** {string / array} event Event name in EventEmitter2 format
   core.hasPermission = function(action, subscriber, event) {
-    var pubsub = core.getPubsub(subscriber);
+    var pubsub = core.getPubSub(subscriber);
 
     // Turn 'namespace.ext.that' => ['namespace', 'ext', 'that']
     var eventPerm = typeof event === 'string' ? event.split('.') : event.slice();
@@ -238,21 +238,28 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   // Compatible with EventEmitter2 events. Defaults to '.' delimeter.
   //
   // * **param:** {string} subscriber Module name
-  core.getPubsub = function(subscriber) {
+  core.getPubSub = function(subscriber) {
     // If PubSub doesn't exist, create
-    var pubsub = pubsubs[subscriber] = (!pubsubs[subscriber]) ? core.createPubSub(subscriber) : pubsubs[subscriber];
+    var pubsub = core.pubsubs[subscriber] = (!core.pubsubs[subscriber]) ? core.createPubSub(subscriber) : core.pubsubs[subscriber];
 
     return pubsub;
   };
 
   // Create EventEmitter instance
-  core.createPubSub = function(subscriber) {
+  core.createPubSub = function() {
     var pubsub = new EventEmitter({
       wildcard: true,
       delimeter: '.'
     });
 
     return pubsub;
+  };
+
+  // Remove EventEmitter instance
+  core.removePubSub = function(sandboxName) {
+    pubsubs[sandboxName].removeAllListeners();
+    pubsubs[sandboxName] = null;
+    delete pubsubs[sandboxName];
   };
 
   core.getEmitQueueLength = function() {
@@ -311,17 +318,17 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   };
 
   // Automatically load a widget and initialize it. File name of the
-  // widget will be derived from the channel, decamelized and underscore
-  // delimited by default.
+  // widget will be derived from the sandbox name, decamelized and
+  // underscore delimited by default.
   //
   // * **param:** {Object/Array} an array with objects or single object containing channel and options
   core.start = function(list) {
     var args = [].slice.call(arguments, 1);
 
-    // Allow pair channel & options as params
+    // Allow pair sandboxName & options as params
     if (typeof list === 'string' && args[0] !== undefined) {
       list = [{
-        channel: list,
+        sandboxName: list,
         options: args[0]
       }];
     }
@@ -332,15 +339,15 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     }
 
     if (!Array.isArray(list)) {
-      throw new Error('Channel must be defined as an array');
+      throw new Error('Sandbox properties must be defined as an array');
     }
 
     var i = 0;
     var l = list.length;
     var promises = [];
 
-    function load(channel, options) {
-      var file = decamelize(channel);
+    function load(sandboxName, options) {
+      var file = decamelize(sandboxName);
       var dfd = core.data.deferred();
       var widgetsPath = core.getWidgetsPath();
       var requireConfig = require.s.contexts._.config;
@@ -365,17 +372,17 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       });
 
       // Instantiate unique sandbox
-      var widgetSandbox = sandbox.create(core, channel);
+      var widgetSandbox = sandbox.create(core, sandboxName);
 
       // Create pubsub
-      core.createPubSub(channel);
+      core.getPubSub(sandboxName);
 
       // Load permissions into pubsub
-      core.loadPermissions(channel);
+      core.loadPermissions(sandboxName);
 
       // Apply application extensions
       if (core.getSandbox) {
-        widgetSandbox = core.getSandbox(widgetSandbox, channel);
+        widgetSandbox = core.getSandbox(widgetSandbox, sandboxName);
       }
 
       // Define the unique sandbox
@@ -424,9 +431,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   core.stop = function(sandboxName, el) {
     var file = decamelize(sandboxName);
 
-    pubsubs[sandboxName].removeAllListeners();
-    pubsubs[sandboxName] = null;
-    delete pubsubs[sandboxName];
+    core.removePubSub(sandboxName);
 
     // Remove all modules under a widget path (e.g widgets/todos)
     core.unload('widgets/' + file);

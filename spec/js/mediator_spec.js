@@ -1,6 +1,6 @@
 define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator, sandbox, permissions, module) {
   describe('PubSub', function() {
-    var pubsub, SANDBOX_NAME = 'test_widget',
+    var SANDBOX_NAME = 'test_widget',
       TEST_EVENT = 'stub';
 
     mediator.getSandbox = function(sandbox) {
@@ -13,7 +13,7 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
       return fn;
     };
 
-    mediator.hasPermissions = function() {
+    mediator.hasPermission = function() {
       return true;
     };
 
@@ -26,28 +26,78 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
       // verify setup
       expect(mediator).toBeDefined();
       expect(mediator['pubsubs']).toBeDefined();
-      expect(mediator.pubsubs).toBeDefined();
 
-      var pubsub = mediator.pubsubs[SANDBOX_NAME];
-      pubsub.removeAllListeners();
+      // create pubsub for SANDBOX name
+      //mediator.createPubSub(SANDBOX_NAME);
 
+      // pubsub is SANDBOX_NAME
+      //var pubsub = mediator.pubsubs[SANDBOX_NAME];
+
+      // clear out listeners, if any
+      //pubsub.removeAllListeners();
     });
 
     describe('sandbox', function() {
-      describe('creation of sandbox', function() {
-        mediator.start([{
-          channel: SANDBOX_NAME,
-          options: {
-            element: '#todoapp'
-          }
-        }]);
+      describe('assign pubsubs upon start/stop of pubsubs', function() {
+        it('assign pubsub on sandbox start', function() {
+          runs(function() {
+            mediator.start([{
+              channel: SANDBOX_NAME,
+              options: {
+                element: '#todoapp'
+              }
+            }]);
+          });
 
-        it('should created a pubsub of the sandbox', function() {
-          expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+          waits(100); // wait for start's .load promise
+
+          runs(function() {
+            expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+          });
+
         });
-        //expect(mediator['pubsubs']).toBeDefined();
-        //expect(mediator.pubsubs).toBeDefined();
-        //expect(mediator.pubsubs[TEST_EVENT]).toBeDefined();
+
+        it('destroy pubsub on sandbox stop', function() {
+          runs(function() {
+            mediator.start([{
+              channel: SANDBOX_NAME,
+              options: {
+                element: '#todoapp'
+              }
+            }]);
+          });
+          waits(100); // wait for start's .load promise
+
+          runs(function() {
+            expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+          });
+
+          runs(function() {
+            mediator.stop(SANDBOX_NAME);
+            expect(mediator.pubsubs[SANDBOX_NAME]).not.toBeDefined();
+          });
+        });
+      });
+
+      describe('starting/stopping pubsubs', function() {
+        if (SANDBOX_NAME in mediator.pubsubs) {
+          mediator.removePubSub(SANDBOX_NAME);
+        }
+
+        mediator.getPubSub(SANDBOX_NAME);
+
+        it('should start pubsubs', function() {
+        mediator.getPubSub(SANDBOX_NAME);
+
+          expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+
+        });
+
+        it('should destroy pubsubs', function() {
+          mediator.removePubSub(SANDBOX_NAME);
+          expect(mediator.pubsubs[SANDBOX_NAME]).not.toBeDefined();
+
+        });
       });
 
     });
@@ -81,14 +131,14 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
       });
 
       it('should allow an event to be subscribed', function() {
-        var pubsub = mediator.pubsubs[SANDBOX_NAME];
+        var pubsub = mediator.createPubSub(SANDBOX_NAME);
         pubsub.on(TEST_EVENT, function() {}, this);
         expect(pubsub.listeners(TEST_EVENT).length).toBe(1);
       });
 
       it('should be able assign a specific callback for subscribed event', function() {
         var callback, callbackResult = 'callback';
-        var pubsub = mediator.pubsubs[SANDBOX_NAME];
+        var pubsub = mediator.createPubSub(SANDBOX_NAME);
         pubsub.on(TEST_EVENT, function() {}, this);
 
         pubsub.on(TEST_EVENT, function() {
@@ -102,13 +152,21 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
       it('should allow subscribing multiple callbacks for single event channel', function() {
         var callback1 = function() {};
         var callback2 = function() {};
-        var pubsub = mediator.pubsubs[SANDBOX_NAME];
+        var pubsub = mediator.createPubSub(SANDBOX_NAME);
 
         pubsub.on(TEST_EVENT, callback1, this);
         pubsub.on(TEST_EVENT, callback2, this);
 
         //expect(channels[TEST_EVENT]).toContain(callback1, callback2);
         expect(pubsub.listeners(TEST_EVENT).length).toBe(2);
+      });
+
+      it('should allow subscribing for wildcard events', function() {
+        var callback1 = function() {};
+        var pubsub = mediator.getPubSub(SANDBOX_NAME);
+
+        mediator.on('*', SANDBOX_NAME, callback1, this);
+        expect(pubsub.listenersAny().length).toBe(1);
       });
     });
 
