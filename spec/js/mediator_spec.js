@@ -17,10 +17,6 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
       return true;
     };
 
-    // Define stub widget main (to prevent RequireJS load errors)
-    define('spec/js/widgets/test_widget/main', function() {
-      return function() {};
-    });
 
     beforeEach(function() {
       // verify setup
@@ -35,10 +31,19 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
 
       // clear out listeners, if any
       //pubsub.removeAllListeners();
+
     });
 
     describe('sandbox', function() {
+      beforeEach(function() {
+        // Define stub widget main (to prevent RequireJS load errors)
+        define('spec/js/widgets/test_widget/main', function() {
+          return function() {};
+        });
+      });
       describe('assign pubsubs upon start/stop of pubsubs', function() {
+
+
         it('assign pubsub on sandbox start', function() {
           runs(function() {
             mediator.start([{
@@ -87,7 +92,7 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
         mediator.getPubSub(SANDBOX_NAME);
 
         it('should start pubsubs', function() {
-        mediator.getPubSub(SANDBOX_NAME);
+          mediator.getPubSub(SANDBOX_NAME);
 
           expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
 
@@ -103,6 +108,12 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
     });
 
     describe('on', function() {
+
+      beforeEach(function(){
+        if (SANDBOX_NAME in mediator.pubsubs) {
+          mediator.removePubSub(SANDBOX_NAME);
+        }
+      });
 
       describe('verification of parameters', function() {
         it('should throw an error if all the params are not specified', function() {
@@ -168,6 +179,42 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
         mediator.on('*', SANDBOX_NAME, callback1, this);
         expect(pubsub.listenersAny().length).toBe(1);
       });
+
+      describe('should allow namespaces and wildcards', function() {
+
+        it('should allow subscribing for namespaces, 2 level', function() {
+          var callback1 = function() {};
+          var pubsub = mediator.getPubSub(SANDBOX_NAME);
+
+          mediator.on('test.ha', SANDBOX_NAME, callback1, this);
+          expect(pubsub.listeners('test.ha').length).toBe(1);
+          expect(pubsub.listeners('test.*').length).toBe(1);
+          expect(pubsub.listeners('test.**').length).toBe(1);
+        });
+
+        it('should allow subscribing for namespaces, 3 level, wildcard', function() {
+          var callback1 = function() {};
+          var pubsub = mediator.getPubSub(SANDBOX_NAME);
+
+          mediator.on('test.kal.sup', SANDBOX_NAME, callback1, this);
+          expect(pubsub.listeners('test.kal.sup').length).toBe(1);
+          expect(pubsub.listeners('test.*.sup').length).toBe(1);
+          expect(pubsub.listeners('test.**.sup').length).toBe(1);
+        });
+
+        it('should allow subscribing for namespaces, 4 level, wildcard + **', function() {
+          var callback1 = function() {};
+          var pubsub = mediator.getPubSub(SANDBOX_NAME);
+
+          mediator.on('test.khal.drogo.sup', SANDBOX_NAME, callback1, this);
+          expect(pubsub.listeners('test.khal.drogo.sup').length).toBe(1);
+          expect(pubsub.listeners('test.*.sup').length).toBe(0);
+          expect(pubsub.listeners('test.**.sup').length).toBe(1);
+        });
+
+      });
+
+
     });
 
     describe('emit', function() {
