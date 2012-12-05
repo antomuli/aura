@@ -13,10 +13,10 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
       return fn;
     };
 
+    mediator.hasPermissionOrig = mediator.hasPermission;
     mediator.hasPermission = function() {
       return true;
     };
-
 
     beforeEach(function() {
       // verify setup
@@ -42,8 +42,6 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
         });
       });
       describe('assign pubsubs upon start/stop of pubsubs', function() {
-
-
         it('assign pubsub on sandbox start', function() {
           runs(function() {
             mediator.start([{
@@ -107,9 +105,48 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
 
     });
 
+    describe('permissions', function() {
+      define('perms', ['aura_perms'], function(permissions) {
+        'use strict';
+
+        permissions.extend({
+          test_widget: {
+            emit: ['stub.*'],
+            on: []
+          }
+        });
+
+        return permissions;
+      });
+
+      require(['perms'], function(permissions) {
+        'use strict';
+
+        mediator.stop(SANDBOX_NAME);
+        mediator.start([{
+          channel: SANDBOX_NAME,
+          options: {
+            element: '#todoapp'
+          }
+        }]);
+
+        describe('should load permissions', function() {
+          expect(mediator.hasPermissionOrig('emit', SANDBOX_NAME, 'stub.lol')).toBeTruthy();
+          expect(mediator.hasPermissionOrig('on', SANDBOX_NAME, 'stub.lol')).toBeFalsy();
+        });
+
+        describe('can get permissions', function() {
+
+        });
+      });
+
+
+
+    });
+
     describe('on', function() {
 
-      beforeEach(function(){
+      beforeEach(function() {
         if (SANDBOX_NAME in mediator.pubsubs) {
           mediator.removePubSub(SANDBOX_NAME);
         }
