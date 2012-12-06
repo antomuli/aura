@@ -13,8 +13,10 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
 
   'use strict';
 
+  var Core = function() {
+      this.pubsubs = {}; // Pubsub sessions for sandboxes
+    };
   var core = {}; // Mediator object
-  var pubsubs = {}; // Pubsub sessions for sandboxes
   var emitQueue = [];
   var isWidgetLoading = false;
   var WIDGETS_PATH = 'widgets'; // Path to widgets
@@ -63,7 +65,6 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   };
 
   // Attached pubsubs to core
-  core.pubsubs = pubsubs;
 
 
   // The bind method is used for callbacks.
@@ -186,7 +187,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   core.loadPermissions = function(subscriber) {
     var pubsub = core.getPubSub(subscriber);
     var sandboxPerms = core.getPermissions(subscriber);
-    var noopFunction = function(){};
+    var noopFunction = function() {};
     var rules, rule, i;
 
     for (var action in sandboxPerms) {
@@ -239,8 +240,17 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   //
   // * **param:** {string} subscriber Module name
   core.getPubSub = function(subscriber) {
+    var pubsub;
+
     // If PubSub doesn't exist, create
-    var pubsub = core.pubsubs[subscriber] = (!core.pubsubs[subscriber]) ? core.createPubSub(subscriber) : core.pubsubs[subscriber];
+    if (!this.pubsubs[subscriber]) {
+      pubsub = this.createPubSub(subscriber);
+      // core.loadPermissions(subscriber);
+      this.pubsubs[subscriber] = pubsub;
+    } else {
+      pubsub = this.pubsubs[subscriber];
+    }
+
 
     return pubsub;
   };
@@ -257,9 +267,9 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
 
   // Remove EventEmitter instance
   core.removePubSub = function(sandboxName) {
-    pubsubs[sandboxName].removeAllListeners();
-    pubsubs[sandboxName] = null;
-    delete pubsubs[sandboxName];
+    this.pubsubs[sandboxName].removeAllListeners();
+    this.pubsubs[sandboxName] = null;
+    delete this.pubsubs[sandboxName];
   };
 
   core.getEmitQueueLength = function() {
@@ -287,9 +297,9 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       var args = [].slice.call(arguments, 1);
       args = arguments[1];
 
-      for (var key in pubsubs) {
+      for (var key in this.pubsubs) {
         try {
-          var pubsub = pubsubs[key];
+          var pubsub = this.pubsubs[key];
           pubsub.emitArgs(event, args);
         } catch (e) {
           console.error(e.message);
@@ -316,6 +326,72 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
 
     emitQueue = [];
   };
+
+  core.load = function(sandboxName, options) {
+    var file = decamelize(sandboxName);
+    var dfd = core.data.deferred();
+    var widgetsPath = core.getWidgetsPath();
+    var requireConfig = require.s.contexts._.config;
+
+    if (requireConfig.paths && requireConfig.paths.hasOwnProperty('widgets')) {
+      widgetsPath = requireConfig.paths.widgets;
+    }
+
+    var widgetPath = widgetsPath + '/' + file;
+    // Unique sandbox module to be used by this widget
+    var widgetSandboxPath = 'sandbox$' + sandboxSerial++;
+
+    // Construct RequireJS map configuration
+    var sandboxMap = {};
+    // Every module whose path prefix matches widgetSandbox will get the unique sandbox for this widget
+    sandboxMap[widgetPath] = {
+      sandbox: widgetSandboxPath
+    };
+
+    var req = require.config({
+      map: sandboxMap
+    });
+
+    // Instantiate unique sandbox
+    var widgetSandbox = sandbox.create(core, sandboxName);
+
+    // Create pubsub
+    this.getPubSub(sandboxName);
+
+    // Load permissions into pubsub
+    this.loadPermissions(sandboxName);
+
+    // Apply application extensions
+    if (core.getSandbox) {
+      widgetSandbox = this.getSandbox(widgetSandbox, sandboxName);
+    }
+
+    // Define the unique sandbox
+    define(widgetSandboxPath, widgetSandbox);
+
+    req([widgetPath + '/main'], function(main) {
+      try {
+        main(options);
+      } catch (e) {
+        console.error(e);
+      }
+      dfd.resolve();
+    }, function(err) {
+      if (err.requireType === 'timeout') {
+        console.warn('Could not load module ' + err.requireModules);
+      } else {
+        // If a timeout hasn't occurred and there was another module
+        // related error, unload the module then throw an error
+        var failedId = err.requireModules && err.requireModules[0];
+        require.undef(failedId);
+        throw err;
+      }
+      dfd.reject();
+    });
+
+    return dfd.promise();
+  }
+
 
   // Automatically load a widget and initialize it. File name of the
   // widget will be derived from the sandbox name, decamelized and
@@ -346,77 +422,14 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     var l = list.length;
     var promises = [];
 
-    function load(sandboxName, options) {
-      var file = decamelize(sandboxName);
-      var dfd = core.data.deferred();
-      var widgetsPath = core.getWidgetsPath();
-      var requireConfig = require.s.contexts._.config;
-
-      if (requireConfig.paths && requireConfig.paths.hasOwnProperty('widgets')) {
-        widgetsPath = requireConfig.paths.widgets;
-      }
-
-      var widgetPath = widgetsPath + '/' + file;
-      // Unique sandbox module to be used by this widget
-      var widgetSandboxPath = 'sandbox$' + sandboxSerial++;
-
-      // Construct RequireJS map configuration
-      var sandboxMap = {};
-      // Every module whose path prefix matches widgetSandbox will get the unique sandbox for this widget
-      sandboxMap[widgetPath] = {
-        sandbox: widgetSandboxPath
-      };
-
-      var req = require.config({
-        map: sandboxMap
-      });
-
-      // Instantiate unique sandbox
-      var widgetSandbox = sandbox.create(core, sandboxName);
-
-      // Create pubsub
-      core.getPubSub(sandboxName);
-
-      // Load permissions into pubsub
-      core.loadPermissions(sandboxName);
-
-      // Apply application extensions
-      if (core.getSandbox) {
-        widgetSandbox = core.getSandbox(widgetSandbox, sandboxName);
-      }
-
-      // Define the unique sandbox
-      define(widgetSandboxPath, widgetSandbox);
-
-      req([widgetPath + '/main'], function(main) {
-        try {
-          main(options);
-        } catch (e) {
-          console.error(e);
-        }
-        dfd.resolve();
-      }, function(err) {
-        if (err.requireType === 'timeout') {
-          console.warn('Could not load module ' + err.requireModules);
-        } else {
-          // If a timeout hasn't occurred and there was another module
-          // related error, unload the module then throw an error
-          var failedId = err.requireModules && err.requireModules[0];
-          require.undef(failedId);
-          throw err;
-        }
-        dfd.reject();
-      });
-
-      return dfd.promise();
-    }
+    var that = this;
 
     isWidgetLoading = true;
 
     for (; i < l; i++) {
       var widget = list[i];
 
-      promises.push(load(widget.channel, widget.options || {}));
+      promises.push(core.load(widget.channel, widget.options || {}));
     }
 
     core.data.when.apply($, promises).done(core.emptyEmitQueue);
@@ -472,6 +485,10 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     }
   };
 
-  return core;
+  Core.prototype.constructor = function() {
+
+  };
+  _.extend(Core.prototype, core);
+  return Core;
 
 });

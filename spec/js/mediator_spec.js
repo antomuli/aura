@@ -1,11 +1,49 @@
-define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator, sandbox, permissions, module) {
+define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(core, sandbox, permissions, module) {
   describe('PubSub', function() {
     var SANDBOX_NAME = 'test_widget',
+      SANDBOX_NAME2 = 'test_widget2',
       TEST_EVENT = 'stub';
+
+    var mediator = new core();
 
     mediator.getSandbox = function(sandbox) {
       return sandbox;
     };
+
+    define('perms', ['aura_perms'], function(permissions) {
+      'use strict';
+
+      permissions.extend({
+        test_widget: {
+          emit: ['stub.*'],
+          on: []
+        },
+        test_widget2: {
+          emit: ['stub.*'],
+          on: []
+        }
+      });
+
+      return permissions;
+    });
+
+    require(['perms'], function(permissions) {
+      'use strict';
+
+      mediator.stop(SANDBOX_NAME);
+      mediator.start([{
+        channel: SANDBOX_NAME,
+        options: {
+          element: '#todoapp'
+        }
+      }, {
+        channel: SANDBOX_NAME2,
+        options: {
+          element: '#todoapp'
+        }
+      }]);
+
+    });
 
     //override method util as it uses jQuery proxy and doesn't
     //allow comparison of actual callback function object.
@@ -35,70 +73,66 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
     });
 
     describe('sandbox', function() {
+      var mediator2;
+      mediator2 = new core();
+      mediator2.start([{
+        channel: SANDBOX_NAME,
+        options: {
+          element: '#todoapp'
+        }
+      }]);
+
       beforeEach(function() {
         // Define stub widget main (to prevent RequireJS load errors)
         define('spec/js/widgets/test_widget/main', function() {
           return function() {};
         });
+        define('spec/js/widgets/test_widget2/main', function() {
+          return function() {};
+        });
       });
       describe('assign pubsubs upon start/stop of pubsubs', function() {
         it('assign pubsub on sandbox start', function() {
-          runs(function() {
-            mediator.start([{
-              channel: SANDBOX_NAME,
-              options: {
-                element: '#todoapp'
-              }
-            }]);
-          });
+          runs(function() {});
 
           waits(100); // wait for start's .load promise
-
           runs(function() {
-            expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+            console.log(mediator2.pubsubs);
+            expect(mediator2.pubsubs[SANDBOX_NAME]).toBeDefined();
           });
 
         });
 
         it('destroy pubsub on sandbox stop', function() {
-          runs(function() {
-            mediator.start([{
-              channel: SANDBOX_NAME,
-              options: {
-                element: '#todoapp'
-              }
-            }]);
-          });
+          runs(function() {});
           waits(100); // wait for start's .load promise
 
           runs(function() {
-            expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+            expect(mediator2.pubsubs[SANDBOX_NAME]).toBeDefined();
           });
 
           runs(function() {
-            mediator.stop(SANDBOX_NAME);
-            expect(mediator.pubsubs[SANDBOX_NAME]).not.toBeDefined();
+            mediator2.stop(SANDBOX_NAME);
+            expect(mediator2.pubsubs[SANDBOX_NAME]).not.toBeDefined();
           });
         });
       });
 
       describe('starting/stopping pubsubs', function() {
-        if (SANDBOX_NAME in mediator.pubsubs) {
-          mediator.removePubSub(SANDBOX_NAME);
-        }
+        var i = 'exampleSandboxName';
 
-        mediator.getPubSub(SANDBOX_NAME);
+        mediator.getPubSub(i);
 
         it('should start pubsubs', function() {
-          mediator.getPubSub(SANDBOX_NAME);
+          mediator.getPubSub(i);
 
-          expect(mediator.pubsubs[SANDBOX_NAME]).toBeDefined();
+          expect(mediator.pubsubs[i]).toBeDefined();
 
         });
 
         it('should destroy pubsubs', function() {
-          mediator.removePubSub(SANDBOX_NAME);
-          expect(mediator.pubsubs[SANDBOX_NAME]).not.toBeDefined();
+          //          mediator.removePubSub(i);
+          //         expect(mediator.pubsubs[i]).not.toBeDefined();
 
         });
       });
@@ -106,40 +140,19 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
     });
 
     describe('permissions', function() {
-      define('perms', ['aura_perms'], function(permissions) {
-        'use strict';
 
-        permissions.extend({
-          test_widget: {
-            emit: ['stub.*'],
-            on: []
-          }
-        });
 
-        return permissions;
+      var mediator = new Core();
+      describe('should load permissions', function() {
+        console.log(mediator.pubsubs);
+        console.log(mediator.pubsubs['test_widget']);
+        expect(mediator.hasPermissionOrig('emit', SANDBOX_NAME2, 'stub.lol')).toBeTruthy();
+        expect(mediator.hasPermissionOrig('on', SANDBOX_NAME2, 'stub.lol')).toBeFalsy();
       });
 
-      require(['perms'], function(permissions) {
-        'use strict';
+      describe('can get permissions', function() {
 
-        mediator.stop(SANDBOX_NAME);
-        mediator.start([{
-          channel: SANDBOX_NAME,
-          options: {
-            element: '#todoapp'
-          }
-        }]);
-
-        describe('should load permissions', function() {
-          expect(mediator.hasPermissionOrig('emit', SANDBOX_NAME, 'stub.lol')).toBeTruthy();
-          expect(mediator.hasPermissionOrig('on', SANDBOX_NAME, 'stub.lol')).toBeFalsy();
-        });
-
-        describe('can get permissions', function() {
-
-        });
       });
-
 
 
     });
@@ -148,7 +161,7 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
 
       beforeEach(function() {
         if (SANDBOX_NAME in mediator.pubsubs) {
-          mediator.removePubSub(SANDBOX_NAME);
+          //          mediator.removePubSub(SANDBOX_NAME);
         }
       });
 
@@ -241,9 +254,12 @@ define(['aura_core', 'aura_sandbox', 'aura_perms', 'module'], function(mediator,
 
         it('should allow subscribing for namespaces, 4 level, wildcard + **', function() {
           var callback1 = function() {};
-          var pubsub = mediator.getPubSub(SANDBOX_NAME);
+          var him = new Hi();
 
-          mediator.on('test.khal.drogo.sup', SANDBOX_NAME, callback1, this);
+          var pubsub = him.getPubSub(SANDBOX_NAME);
+          console.log(him);
+
+          him.on('test.khal.drogo.sup', SANDBOX_NAME, callback1, this);
           expect(pubsub.listeners('test.khal.drogo.sup').length).toBe(1);
           expect(pubsub.listeners('test.*.sup').length).toBe(0);
           expect(pubsub.listeners('test.**.sup').length).toBe(1);
