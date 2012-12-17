@@ -5,7 +5,7 @@ define(function() {
   'use strict';
 
   return {
-    create: function(mediator, module) {
+    create: function(mediator, module, permissions) {
       var sandbox = {};
 
       sandbox.log = function() {
@@ -25,11 +25,41 @@ define(function() {
       // * **param:** {object} callback Module
       // * **param:** {object} context Callback context
       sandbox.on = function(channel, event, callback, context) {
-        if (arguments.length === 5) {
 
+        if (channel === undefined || event === undefined || callback === undefined || context === undefined) {
+          throw new Error('Channel, event, callback and context must be defined');
         }
 
-        mediator.on(channel, event, module, callback, context || this);
+        if (typeof channel === 'undefined') {
+          throw new Error('Channel must be defined');
+        }
+
+        if (typeof channel !== 'string') {
+          throw new Error('Channel must be a string');
+        }
+
+        if (typeof event === 'undefined') {
+          throw new Error('Event must be defined');
+        }
+
+        if ((typeof event !== 'string') && (!Array.isArray(event))) {
+          throw new Error('Event must be an EventEmitter compatible argument (string or array)');
+        }
+
+        if (typeof event === 'function') {
+          throw new Error('Callback must be defined');
+        }
+
+        // Prevent subscription if no permission
+        if (!permissions.validate(channel, module)) {
+          return;
+        }
+
+        event = mediator.normalizeEvent(event);
+        event.unshift(channel); // for channel/topic
+        event.unshift(module); // the subscribing module/sandbox
+
+        mediator.on(event, callback, context || this);
         //core.on = function(event, subscriber, callback, context) {
 
       };
@@ -42,6 +72,22 @@ define(function() {
         mediator.on(channel, event, module, sandbox.log.event, context || this);
         //core.on = function(event, subscriber, callback, context) {
 
+      };
+
+      sandbox.listeners = function() {
+        var event;
+        if (arguments.length == 2) {
+          var channel = arguments[0];
+          event = mediator.normalizeEvent(arguments[1]);
+
+          event.unshift(channel);
+
+          return mediator.listeners(event);
+        } else {
+          event = mediator.normalizeEvent(arguments[0]);
+
+          return mediator.listeners(event);
+        }
       };
 
 

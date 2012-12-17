@@ -130,81 +130,25 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
   // A facade to sandboxes' pubsub
   //
   // * **param:** {string} event Event name
-  // * **param:** {string} subscriber Subscriber name
   // * **param:** {function} callback Module callback
   // * **param:** {object} context Context in which to execute the callback
-  core.on = function(channel, event, subscriber, callback, context) {
-    if (event === undefined || subscriber === undefined || callback === undefined || context === undefined) {
-      throw new Error('Channel, event, subscriber, callback, and context must be defined');
+  core.on = function(event, callback, context) {
+    if (event === undefined || callback === undefined || context === undefined) {
+      throw new Error('Event, callback, and context must be defined');
     }
-    if (typeof channel !== 'string') {
-      throw new Error('Channel must be a string');
-    }
-    if (typeof event !== 'string' || Array.isArray(event)) {
+
+    if (typeof event !== 'string' & !Array.isArray(event)) {
       throw new Error('Event must be an EventEmitter compatible argument (string or array)');
     }
 
     event = core.normalizeEvent(event);
-
-    if (typeof subscriber !== 'string') {
-      throw new Error('The widget sandbox name must be passed as string');
-    }
-
     if (typeof callback !== 'function') {
       throw new Error('Callback must be a function');
     }
 
-    // Prevent subscription if no permission
-    if (!permissions.validate(channel, subscriber)) {
-      return;
-    } else {
-      if (event === "*") { // '*' with no namespace to .onAny
-        //channels.onAny(callback.bind(context));
-        channels.onAny(callback.bind(context));
-      } else {
-        //event.unshift('*'); // send to all subscribers
-        event.unshift(channel); // for channel/topic
-        event.unshift(subscriber); // the subscribing module/sandbox
-        channels.on(event, callback.bind(context));
-      }
-
-    }
+    channels.on(event, callback.bind(context));
   };
 
-  // The aura event tree.  `channels` was previously an object literal.
-  // it is now an EventEmitter object with a channels.listenerTree object literal.
-
-  // This tree will store listeners under this structure:
-  //  subscriber (the module or sandbox)
-  //  |
-  //  \- channel (the topic of the event)
-  //    |
-  //    \- event
-  //
-  // Through the sandbox facade however, the event tree is unnoticeable. The
-  // sandbox may subscribe `sandbox.on(channel, EventEmitter object, callback)`
-  // without considering the core's usage.
-  // 
-  // sandbox.on w/o channel acts as a local pubsub.
-  //
-  // Internally:
-  // sandbox.on(EventEmitter Event, callback);
-  //  is a facade to
-  //   core.on(['sandbox'], subscriber, event, callback)
-  //     is a facade to eventEmitter.on(['sandbox', subscriber, event.slice()], callback);
-  //
-  // sandbox.emit('*', EventEmitter Event, args..)
-  // sandbox.on('*', EventEmitter object, callback);
-  //
-  // will publish/listen to all channels the permissions allowed.
-  //
-  // Note: as of 12/10/2012 the current permissions format allows both on and emit
-  // when as channel is declared. Declarative is coming
-  //
-  // A developer may use a helper function to pass a channel seamlessly into the
-  // sandboxes local scope.
-
-  // pass thru to EE, with our core's context
   core.removeAllListeners = function() {
     return channels.removeAllListeners.apply(channels, arguments);
   };
@@ -217,7 +161,6 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     var event = sandbox + '.**';
     channels.removeAllListeners.call(channels, event);
   };
-
 
   core.listenersAny = function() {
     if (arguments.length > 1) {
@@ -236,7 +179,6 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     }
 
     event = core.normalizeEvent(event);
-    event.unshift('*');
 
     return channels.listeners.call(channels, event);
   };
@@ -265,15 +207,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       emitQueue.push(arguments);
       return false;
     } else {
-      var channel = arguments[0];
-      if (typeof channel === 'undefined') {
-        throw new Error('Channel must be defined');
-      }
-      if (typeof channel !== 'string') {
-        throw new Error('Channel must be a string');
-      }
-
-      var event = arguments[1];
+      var event = arguments[0];
       if (typeof event === 'undefined') {
         throw new Error('Event must be defined');
       }
@@ -281,25 +215,14 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       if ((typeof event !== 'string') && (!Array.isArray(event))) {
         throw new Error('Event must be an EventEmitter compatible argument (string or array)');
       }
-      event = core.normalizeEvent(event);
-      if (arguments.length > 3) { // if length 4 or longer, it has permissions
-        // Prevent subscription if no permission
-        var emitter = arguments[2];
-        if (!permissions.validate(channel, emitter)) {
-          return;
-        }
-        args = arguments[3];
-      } else {
-        args = arguments[2];
-      }
 
+      event = core.normalizeEvent(event);
+
+      args = arguments[1];
       args = (typeof args === 'string') ? [args] : args;
 
       try {
-        event.unshift(channel); // channel / topic
-        //event.unshift(emitter);
-        event.unshift('*');
-        channels.emitArgs(event, args);
+         channels.emitArgs(event, args);
       } catch (e) {
         console.error(e.message);
       }
@@ -367,7 +290,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       });
 
       // Instantiate unique sandbox
-      var widgetSandbox = sandbox.create(core, module);
+      var widgetSandbox = sandbox.create(core, module, permissions);
 
       // Apply application extensions
       if (core.getSandbox) {

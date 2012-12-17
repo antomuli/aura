@@ -29,7 +29,7 @@
             exports: '$',
             // switch to the DOM-lib of your choice
             // Could be either 'jquery' or 'zepto';
-            deps: ['jquery']
+            deps: [ 'jquery' ]
           },
           'underscore': {
             exports: '_'
@@ -44,7 +44,22 @@
           'deferred': {
             exports: 'Deferred',
             deps: ['dom']
-          }
+          },
+          'fullcalendar': {
+            deps: ['jquery'],
+            exports: '$.fullCalendar'
+          },
+          'jquery_ui': {
+            deps: ['jquery'],
+            exports: '$.ui'
+          },
+            jasmine: {
+              exports: 'jasmine'
+            },
+            'jasmine-html': {
+              deps: ['jasmine'],
+              exports: 'jasmine'
+            }
         },
         paths: {
           // jQuery
@@ -79,12 +94,8 @@
           underscore: 'src/aura/lib/lodash',
           fullcalendar: 'src/extensions/backbone/lib/fullcalendar.min',
           jquery_ui: 'src/extensions/backbone/lib/jquery-ui.min'
-         },
-        config: {
-          'spec/js/mediator_spec': {
-            permissions: false
-          }
-        }
+         }
+
     };
     require.config( require.aura );
 
@@ -107,5 +118,8 @@
 
   </script>
 </head>
-<body></body>
+<body>
+  <div id="sample_widget"></div>
+
+</body>
 </html>
