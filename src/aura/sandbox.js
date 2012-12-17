@@ -30,24 +30,16 @@ define(function() {
           throw new Error('Channel, event, callback and context must be defined');
         }
 
-        if (typeof channel === 'undefined') {
-          throw new Error('Channel must be defined');
-        }
-
         if (typeof channel !== 'string') {
           throw new Error('Channel must be a string');
-        }
-
-        if (typeof event === 'undefined') {
-          throw new Error('Event must be defined');
         }
 
         if ((typeof event !== 'string') && (!Array.isArray(event))) {
           throw new Error('Event must be an EventEmitter compatible argument (string or array)');
         }
 
-        if (typeof event === 'function') {
-          throw new Error('Callback must be defined');
+        if (typeof callback !== 'function') {
+          throw new Error('Callback must be a function');
         }
 
         // Prevent subscription if no permission
@@ -59,9 +51,7 @@ define(function() {
         event.unshift(channel); // for channel/topic
         event.unshift(module); // the subscribing module/sandbox
 
-        mediator.on(event, callback, context || this);
-        //core.on = function(event, subscriber, callback, context) {
-
+        mediator.on.call(mediator, event, callback, context || this);
       };
 
       // sandbox.logEvent can subscribe to events and print them
@@ -70,33 +60,57 @@ define(function() {
       // * **param:** {object} context Callback context
       sandbox.on.log = function(channel, event, context) {
         mediator.on(channel, event, module, sandbox.log.event, context || this);
-        //core.on = function(event, subscriber, callback, context) {
-
       };
 
       sandbox.listeners = function() {
+        // @todo, if is array, iterate through events prepending module ns
         var event;
         if (arguments.length == 2) {
           var channel = arguments[0];
           event = mediator.normalizeEvent(arguments[1]);
 
-          event.unshift(channel);
+          event.unshift(module);
 
           return mediator.listeners(event);
         } else {
           event = mediator.normalizeEvent(arguments[0]);
+          event.unshift(module);
 
           return mediator.listeners(event);
         }
       };
 
+      sandbox.removeAllListeners = function() {
+        // @todo, if is array, iterate through events prepending module ns
+      }
 
       // * **param:** {string} channel Event name
       sandbox.emit = function(channel, event) {
+        if (channel === undefined) {
+          throw new Error('Channel must be defined');
+        }
+
+        if (typeof channel !== 'string') {
+          throw new Error('Channel must be a string');
+        }
+
+        if (event === undefined) {
+          throw new Error('Event must be defined');
+        }
+
+        if ((typeof event !== 'string') && (!Array.isArray(event))) {
+          throw new Error('Event must be an EventEmitter compatible argument (string or array)');
+        }
+
+        event = mediator.normalizeEvent(event);
+        event.unshift(channel);
+        event.unshift(module);
 
         var args = [].slice.call(arguments, 2);
-        mediator.emit.apply(mediator, [channel, event, module].concat(args));
-        //core.emit = function(event) {
+        mediator.emit.call(mediator, event, args);
+//        mediator.emit(event, args);
+        //mediator.emit.apply(mediator, [event].concat(args));
+        //mediator.emit.call(mediator, event, args);
       };
 
       // * **param:** {Object/Array} an array with objects or single object containing channel and element

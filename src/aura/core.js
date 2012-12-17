@@ -179,7 +179,6 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
     }
 
     event = core.normalizeEvent(event);
-
     return channels.listeners.call(channels, event);
   };
 
@@ -222,7 +221,7 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       args = (typeof args === 'string') ? [args] : args;
 
       try {
-         channels.emitArgs(event, args);
+        channels.emitArgs(event, args);
       } catch (e) {
         console.error(e.message);
       }
