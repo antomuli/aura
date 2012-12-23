@@ -278,6 +278,7 @@ define(['aura_core', 'aura_sandbox', 'sandbox_perms'], function(mediator, aura_s
           expect(callback).toHaveBeenCalledWith(argument);
         });
 
+        /*
         it('should add to emit queue if widget is loading', function() {
 
           mediator.start({
@@ -293,6 +294,7 @@ define(['aura_core', 'aura_sandbox', 'sandbox_perms'], function(mediator, aura_s
 
           expect(mediator.getEmitQueueLength()).toBe(1);
         });
+        */
       });
 
       describe('permissions', function() {
@@ -507,12 +509,11 @@ define(['aura_core', 'aura_sandbox', 'sandbox_perms'], function(mediator, aura_s
         });
 
         it('should call every callback for a channel, within the correct context', function() {
+          mediator.removeAllListeners();
           var callback = sinon.spy();
 
           sandbox.on(TEST_CHANNEL, TEST_EVENT, callback, this);
-
-          sandbox.emit(TEST_CHANNEL, TEST_EVENT, 'hi');
-          mediator.emit(['test_widget', 'test_topic', 'stub'], 'hi');
+          sandbox.emit(TEST_CHANNEL, TEST_EVENT);
 
           expect(callback).toHaveBeenCalled();
         });

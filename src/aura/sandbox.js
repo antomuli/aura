@@ -65,7 +65,7 @@ define(function() {
       sandbox.listeners = function() {
         // @todo, if is array, iterate through events prepending module ns
         var event;
-        if (arguments.length == 2) {
+        if (arguments.length === 2) {
           var channel = arguments[0];
           event = mediator.normalizeEvent(arguments[1]);
 
@@ -79,10 +79,6 @@ define(function() {
           return mediator.listeners(event);
         }
       };
-
-      sandbox.removeAllListeners = function() {
-        // @todo, if is array, iterate through events prepending module ns
-      }
 
       // * **param:** {string} channel Event name
       sandbox.emit = function(channel, event) {
@@ -107,10 +103,9 @@ define(function() {
         event.unshift(module);
 
         var args = [].slice.call(arguments, 2);
+
         mediator.emit.call(mediator, event, args);
-//        mediator.emit(event, args);
-        //mediator.emit.apply(mediator, [event].concat(args));
-        //mediator.emit.call(mediator, event, args);
+        // mediator.emit(event, args);
       };
 
       // * **param:** {Object/Array} an array with objects or single object containing channel and element

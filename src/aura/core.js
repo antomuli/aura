@@ -225,7 +225,6 @@ define(['aura_base', 'aura_sandbox', 'aura_perms', 'eventemitter'], function(bas
       } catch (e) {
         console.error(e.message);
       }
-
     }
 
     return true;
